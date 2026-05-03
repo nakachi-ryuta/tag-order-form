@@ -142,6 +142,7 @@
 <div class="header">
   <div class="logo">t.a.g <span>商材注文</span></div>
   <div class="header-right">
+    <button class="hbtn hbtn-outline" onclick="openDeliveryCheck()">📦 納品確認</button>
     <button class="hbtn hbtn-outline" id="edit-toggle-btn" onclick="toggleEditMode()">✏️ 編集</button>
     <button class="hbtn hbtn-outline" onclick="openAddModal()">＋ ブランド追加</button>
     <button class="hbtn hbtn-gold" onclick="openCart()">🛒 <span id="cart-count">0</span></button>
@@ -267,7 +268,7 @@ const DEFAULT_BRANDS={
   'エドルヨヨ':{maker:'lily',items:['ヨヨNeon Lime','ヨヨAqua Blue','ヨヨPink','ヨヨRed','ヨヨOrange','ヨヨBlue','ヨヨViolet','ヨヨGreen','ヨヨイエロー','ヨヨホワイトラベンダー','ヨヨウルトラピンク']},
   'ソフタッチ':{maker:'lily',items:['６/６８','６/７']},
   'コレストン':{maker:'lily',items:['8/00','10/16','6/5','6/6','6/68','6/99']},
-  'フィヨーレ':{maker:'lily',items:['４GP','６GP','８GP','１０GP','４MT','６MT','８MT','１０MT','O１０','コッパーオレンジ','6ウルトラバイオレット','ブラックブースター１','クリア','クリア０','BV6','O7','11ピンクベージュ','11サンドベージュ','10コーラルピンク','6ピンク','14ベージュ','10ミルキーホワイト','レッド7','B6','5グレー','9グレー','11グレー','ｸｵﾙｼｱﾌﾞﾘｰﾁ','12MT','10MB','3NB','2NN','4GNB','7シルバー','9シルバー','マット','14ラベンダー','V6','クオルシアブリーチ','YM6','YM10','3MT','3グレー','ディープパープル5','ピンクベージュ13','クオルシアオレンジ10','カーディナルレッド7','クオルシア14ハイライトナー','12GA','Y10','7アクアブルー','ホワイトピンク','ホワイトベージュ','ホワイトアッシュ','G6']},
+  'フィヨーレ':{maker:'lily',items:['４GP','６GP','８GP','１０GP','４MT','６MT','８MT','１０MT','O１０','コッパーオレンジ','6ウルトラバイオレット','ブラックブースター１','クリア','クリア０','BV6','O7','11ピンクベージュ','11サンドベージュ','10コーラルピンク','6ピンク','14ベージュ','10ミルキーホワイト','レッド7','B6','5グレー','9グレー','11グレー','ｸｫﾙｼｱﾌﾞﾘｰﾁ','12MT','10MB','3NB','2NN','4GNB','7シルバー','9シルバー','マット','14ラベンダー','V6','クオルシアブリーチ','YM6','YM10','3MT','3グレー','ディープパープル5','ピンクベージュ13','クオルシアオレンジ10','カーディナルレッド7','クオルシア14ハイライトナー','12GA','Y10','7アクアブルー','ホワイトピンク','ホワイトベージュ','ホワイトアッシュ','G6']},
   'ナプラ':{maker:'lily',items:['アクセスフリー','ナシード　４mt']},
   'パイモア':{maker:'lily',items:['フェードブラック','ショコラベージュ']},
   'ミルボン':{maker:'lily',items:['ネオリシオH１']},
@@ -316,7 +317,6 @@ function loadStorage(){
 }
 
 function sk(s){
-  // 全角文字対応：btoa/encodeURIComponentでユニークなIDを生成
   try{
     return btoa(encodeURIComponent(s)).replace(/[^a-zA-Z0-9]/g,'_');
   }catch(e){
@@ -427,7 +427,6 @@ function renderBrands(){
     container.appendChild(sec);
   });
   if(!any)container.innerHTML='<div style="text-align:center;padding:40px;color:var(--text3);font-size:13px">該当する商材が見つかりません</div>';
-  // edit-mode クラスを items-list にも適用
   if(editMode){
     document.querySelectorAll('.item-del-btn').forEach(b=>b.style.display='block');
     document.querySelectorAll('.brand-del-btn').forEach(b=>b.style.display='block');
@@ -525,11 +524,9 @@ function confirmAddBrand(){
   BRANDS[name]={maker,items:[]};
   saveStorage();
   closeAddModal();
-  // そのメーカータブに切り替え
   currentMaker=maker;
   document.querySelectorAll('.maker-tab').forEach((b,i)=>b.classList.toggle('active',(maker==='all'&&i===0)||(maker==='lily'&&i===1)||(maker==='mirabis'&&i===2)));
   renderBrands();
-  // スクロール
   setTimeout(()=>{
     document.querySelectorAll('.brand-name').forEach(el=>{
       if(el.textContent===name)el.closest('.brand-section')?.scrollIntoView({behavior:'smooth',block:'center'});
@@ -621,13 +618,11 @@ async function submitOrder(){
   const total=Object.values(quantities).reduce((s,v)=>s+v,0);
   closeCart();
 
-  // 送信中画面
   document.getElementById('form-content').style.display='none';
   document.getElementById('bottom-bar').style.display='none';
   document.getElementById('success-screen').classList.add('show');
   document.getElementById('success-detail').innerHTML=`<span style="color:var(--text2);font-size:13px">送信中...</span>`;
 
-  // GASに送信するデータを整形
   const items=Object.entries(quantities).map(([key,qty])=>{
     const idx=key.indexOf(':');
     return {name:key.slice(idx+1),qty};
@@ -640,7 +635,6 @@ async function submitOrder(){
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({staff:selectedStaff,items,timestamp:new Date().toISOString()})
     });
-    // no-corsのためレスポンス内容は取得できないが送信は完了
     document.getElementById('success-detail').innerHTML=
       `<strong style="color:var(--accent)">${selectedStaff}</strong> さんの注文<br>計 <strong style="color:var(--accent)">${total}個</strong> を管理者に送信しました`;
   }catch(err){
@@ -666,14 +660,10 @@ async function openDeliveryCheck(){
   document.getElementById('delivery-overlay').classList.add('open');
 
   try{
-    // GASから未確認納品リストを取得
     const res=await fetch(GAS_URL+'?action=getPendingDeliveries&staff='+encodeURIComponent(selectedStaff),{
       method:'GET',
       mode:'no-cors'
     });
-
-    // no-corsのためレスポンスが取得できないので、スプレッドシートから直接確認できない
-    // 代わりにスタッフが手動で確認するUIを表示
     showDeliveryCheckUI();
   }catch(e){
     showDeliveryCheckUI();
