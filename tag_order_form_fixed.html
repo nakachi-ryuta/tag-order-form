@@ -184,6 +184,23 @@
   <button class="submit-btn" id="submit-btn" onclick="openCart()" disabled>注文内容を確認する</button>
 </div>
 
+
+<!-- 納品確認モーダル -->
+<div class="modal-overlay" id="delivery-overlay" onclick="if(event.target===this)closeDeliveryCheck()">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">📦 納品確認</div>
+      <button class="modal-close" onclick="closeDeliveryCheck()">✕</button>
+    </div>
+    <div id="delivery-content">
+      <div style="text-align:center;padding:20px;color:var(--text2);font-size:13px">
+        スタッフ名を選択してから納品確認を押してください
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px" id="delivery-btn-area"></div>
+  </div>
+</div>
+
 <!-- カートモーダル -->
 <div class="modal-overlay" id="cart-overlay" onclick="if(event.target===this)closeCart()">
   <div class="modal">
@@ -631,6 +648,86 @@ async function submitOrder(){
       `<strong style="color:var(--accent)">${selectedStaff}</strong> さんの注文<br>計 <strong style="color:var(--accent)">${total}個</strong> を管理者に送信しました<br><span style="font-size:11px;color:var(--text3)">※オフライン時は後で再送されます</span>`;
     console.error('送信エラー:',err);
   }
+}
+
+
+// ── 納品確認 ──
+async function openDeliveryCheck(){
+  if(!selectedStaff){
+    document.getElementById('staff-required').style.display='block';
+    document.getElementById('staff-grid').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+
+  const content=document.getElementById('delivery-content');
+  const btnArea=document.getElementById('delivery-btn-area');
+  content.innerHTML='<div style="text-align:center;padding:20px;color:var(--text2);font-size:13px">読み込み中...</div>';
+  btnArea.innerHTML='';
+  document.getElementById('delivery-overlay').classList.add('open');
+
+  try{
+    // GASから未確認納品リストを取得
+    const res=await fetch(GAS_URL+'?action=getPendingDeliveries&staff='+encodeURIComponent(selectedStaff),{
+      method:'GET',
+      mode:'no-cors'
+    });
+
+    // no-corsのためレスポンスが取得できないので、スプレッドシートから直接確認できない
+    // 代わりにスタッフが手動で確認するUIを表示
+    showDeliveryCheckUI();
+  }catch(e){
+    showDeliveryCheckUI();
+  }
+}
+
+function showDeliveryCheckUI(){
+  const content=document.getElementById('delivery-content');
+  const btnArea=document.getElementById('delivery-btn-area');
+
+  content.innerHTML=`
+    <div style="background:var(--surface2);border-radius:8px;padding:14px;margin-bottom:14px;font-size:13px;color:var(--text2)">
+      <span style="color:var(--accent);font-weight:700;font-family:'DM Mono',monospace">${selectedStaff}</span> さんの納品確認
+    </div>
+    <div style="font-size:13px;color:var(--text);line-height:1.8;padding:10px 0">
+      管理者が納品を確定した商材を受け取りましたか？<br>
+      <span style="color:var(--text2);font-size:12px">※確認するとスプレッドシートに記録されます</span>
+    </div>
+    <div style="margin-top:14px;padding:12px;background:var(--surface2);border-radius:8px;font-size:12px;color:var(--text3)">
+      スプレッドシートの「注文ログ」シートで<br>自分の行のG列が「納品済」になっていれば確認できます
+    </div>
+  `;
+
+  btnArea.innerHTML=`
+    <button onclick="closeDeliveryCheck()" class="reset-btn" style="flex:1">キャンセル</button>
+    <button onclick="submitDeliveryCheck()" class="submit-btn" style="flex:2;background:var(--success)">✅ 受け取りました</button>
+  `;
+}
+
+async function submitDeliveryCheck(){
+  const btnArea=document.getElementById('delivery-btn-area');
+  btnArea.innerHTML='<div style="text-align:center;width:100%;padding:10px;color:var(--text2);font-size:13px">送信中...</div>';
+
+  try{
+    await fetch(GAS_URL,{
+      method:'POST',
+      mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'deliveryCheck',staff:selectedStaff})
+    });
+  }catch(e){}
+
+  document.getElementById('delivery-content').innerHTML=`
+    <div style="text-align:center;padding:30px 20px">
+      <div style="font-size:40px;margin-bottom:12px">✅</div>
+      <div style="font-size:16px;font-weight:700;color:var(--success);margin-bottom:8px">確認しました！</div>
+      <div style="font-size:13px;color:var(--text2)"><strong style="color:var(--accent)">${selectedStaff}</strong> さんの納品確認を送信しました</div>
+    </div>
+  `;
+  btnArea.innerHTML=`<button onclick="closeDeliveryCheck()" class="submit-btn" style="flex:1">閉じる</button>`;
+}
+
+function closeDeliveryCheck(){
+  document.getElementById('delivery-overlay').classList.remove('open');
 }
 
 function resetItems(){quantities={};renderBrands();updateCartCount();}
