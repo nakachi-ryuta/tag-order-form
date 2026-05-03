@@ -119,10 +119,9 @@
   .confirm-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:8px}
   .confirm-sub{font-size:12px;color:var(--text2);margin-bottom:18px;line-height:1.6}
 
-  /* ── 納品確認スタイル ── */
+  /* 納品確認 */
   .delivery-staff-card{background:var(--surface2);border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
   .delivery-order-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
-  .delivery-order-header{padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
   .delivery-item-row{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;font-size:13px;border-bottom:1px solid var(--border)}
   .delivery-item-row:last-child{border-bottom:none}
   .delivery-item-name{color:var(--text);flex:1}
@@ -251,7 +250,7 @@
 
 <script>
 const STAFF=['AKIRA','RYUTA','KURA','RYUKI','TAKEYAN','YUKA','REN'];
-const GAS_URL='https://script.google.com/macros/s/AKfycbxeQxj0uRaGcNnvtbxZcTAOMmGcyBy7CTiDmDWT7KUCYITKVKzlXgHDFdqPiwbuXpL3fA/exec';
+const GAS_URL='https://script.google.com/macros/s/AKfycbxG2-VmdwaDVfxpzR87bnvzSVYe3vGEZDAgBrbTCgTwrE_uuxCB4tJTW18AsNyS3olIzQ/exec';
 
 const DEFAULT_BRANDS={
   'イルミナ':{maker:'lily',items:['６ヌード','８ヌード','８ビーチ','６オーシャン','１２オーシャン','６サファリ','８サファリ','４ナイトスカイ','６ナイトスカイ','６トワイライト','６ブロッサム','１２オーキッド','イルミナOX6%','イルミナOX3%','ルミナススプレー','６アンバー']},
@@ -287,7 +286,6 @@ const DEFAULT_BRANDS={
 
 let BRANDS={};
 let selectedStaff=null,quantities={},currentMaker='all',searchQuery='',editMode=false;
-
 const STORE_KEY='tag_brands_v2';
 
 function saveStorage(){try{localStorage.setItem(STORE_KEY,JSON.stringify(BRANDS));}catch(e){}}
@@ -296,18 +294,10 @@ function loadStorage(){
   BRANDS={};
   Object.entries(DEFAULT_BRANDS).forEach(([b,d])=>{BRANDS[b]={maker:d.maker,items:[...d.items]};});
 }
-
 function sk(s){
   try{return btoa(encodeURIComponent(s)).replace(/[^a-zA-Z0-9]/g,'_');}
   catch(e){return s.replace(/[^a-zA-Z0-9]/g,'_');}
 }
-
-function formatDate(str){
-  const d=new Date(str);
-  if(isNaN(d))return str;
-  return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
-}
-
 function init(){
   loadStorage();
   const grid=document.getElementById('staff-grid');
@@ -319,7 +309,6 @@ function init(){
   });
   renderBrands();updateCartCount();
 }
-
 function toggleEditMode(){
   editMode=!editMode;
   document.getElementById('main-wrap').classList.toggle('edit-mode',editMode);
@@ -330,7 +319,6 @@ function toggleEditMode(){
   btn.style.borderColor=editMode?'var(--success)':'';
   renderBrands();
 }
-
 function selectStaff(name,btn){
   selectedStaff=name;
   document.querySelectorAll('.staff-btn').forEach(b=>b.classList.remove('active'));
@@ -338,14 +326,12 @@ function selectStaff(name,btn){
   document.getElementById('staff-required').style.display='none';
   updateCartCount();
 }
-
 function switchMaker(maker,btn){
   currentMaker=maker;
   document.querySelectorAll('.maker-tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');renderBrands();
 }
 function filterItems(q){searchQuery=q.trim().toLowerCase();renderBrands();}
-
 function renderBrands(){
   const container=document.getElementById('brands-container');
   container.innerHTML='';let any=false;
@@ -377,8 +363,8 @@ function renderBrands(){
         ${data.items.map(item=>{
           const qty=quantities[brand+':'+item]||0;
           const sid=sk(brand+item);
-          const dataAttrs=`data-brand="${encodeURIComponent(brand)}" data-item="${encodeURIComponent(item)}"`;
-          return `<div class="item-row" ${dataAttrs}>
+          const da=`data-brand="${encodeURIComponent(brand)}" data-item="${encodeURIComponent(item)}"`;
+          return `<div class="item-row" ${da}>
             <button class="item-del-btn" onclick="confirmDeleteByEl(this)">×</button>
             <div class="item-name">${item}</div>
             <div class="qty-control">
@@ -402,12 +388,10 @@ function renderBrands(){
     document.querySelectorAll('.qty-control').forEach(b=>b.style.display='none');
   }
 }
-
 function toggleBrand(header){
   const list=header.nextElementSibling;const ch=header.querySelector('.chevron');
   list.classList.toggle('open');ch.classList.toggle('open',list.classList.contains('open'));
 }
-
 function changeQtyByEl(btn,delta){
   const row=btn.closest('.item-row');
   changeQty(decodeURIComponent(row.dataset.brand),decodeURIComponent(row.dataset.item),delta);
@@ -497,7 +481,6 @@ function execDelete(){
   saveStorage();closeConfirm();renderBrands();updateCartCount();
 }
 function closeConfirm(){pendingDelete=null;document.getElementById('confirm-overlay').classList.remove('open');}
-
 function openCart(){
   if(!selectedStaff){document.getElementById('staff-required').style.display='block';document.getElementById('staff-grid').scrollIntoView({behavior:'smooth'});return;}
   const total=Object.values(quantities).reduce((s,v)=>s+v,0);if(!total)return;
@@ -550,14 +533,13 @@ async function openDeliveryCheck(){
     </div>`;
   document.getElementById('delivery-btn-area').innerHTML='';
   document.getElementById('delivery-overlay').classList.add('open');
-
   try{
     const res=await fetch(`${GAS_URL}?action=getMyOrders&staff=${encodeURIComponent(selectedStaff)}`);
     const json=await res.json();
     if(json.status==='ok'){
       renderDeliveryOrders(json.orders);
     }else{
-      showDeliveryError(json.message);
+      showDeliveryError(json.message||'データの取得に失敗しました');
     }
   }catch(e){
     showDeliveryError('通信エラーが発生しました');
@@ -585,7 +567,6 @@ function renderDeliveryOrders(orders){
     return;
   }
 
-  // 未受取・受取済に分ける
   const pending=orders.filter(o=>o.status!=='確認済');
   const done=orders.filter(o=>o.status==='確認済');
   const pendingTotal=pending.reduce((s,o)=>s+Number(o.qty),0);
@@ -610,36 +591,30 @@ function renderDeliveryOrders(orders){
       </div>
       <div class="delivery-order-card">`;
     pending.forEach(o=>{
-      html+=`
-        <div class="delivery-item-row">
-          <span class="delivery-item-name">${o.item}</span>
-          <span class="delivery-item-qty">${o.qty}個</span>
-          <span class="status-badge status-pending">🟡 未受取</span>
-        </div>`;
+      html+=`<div class="delivery-item-row">
+        <span class="delivery-item-name">${o.item}</span>
+        <span class="delivery-item-qty">${o.qty}個</span>
+        <span class="status-badge status-pending">🟡 未受取</span>
+      </div>`;
     });
     html+=`</div>`;
   }
 
   if(done.length>0){
-    html+=`
-      <div style="font-size:11px;color:var(--text3);margin:14px 0 8px;letter-spacing:.08em">✅ 受取済（${done.length}件）</div>
+    html+=`<div style="font-size:11px;color:var(--text3);margin:14px 0 8px;letter-spacing:.08em">✅ 受取済（${done.length}件）</div>
       <div class="delivery-order-card">`;
     done.slice(0,10).forEach(o=>{
-      html+=`
-        <div class="delivery-item-row" style="opacity:.6">
-          <span class="delivery-item-name">${o.item}</span>
-          <span class="delivery-item-qty">${o.qty}個</span>
-          <span class="status-badge status-done">✅ 受取済</span>
-        </div>`;
+      html+=`<div class="delivery-item-row" style="opacity:.6">
+        <span class="delivery-item-name">${o.item}</span>
+        <span class="delivery-item-qty">${o.qty}個</span>
+        <span class="status-badge status-done">✅ 受取済</span>
+      </div>`;
     });
-    if(done.length>10){
-      html+=`<div style="text-align:center;padding:8px;font-size:12px;color:var(--text3)">他 ${done.length-10}件</div>`;
-    }
+    if(done.length>10)html+=`<div style="text-align:center;padding:8px;font-size:12px;color:var(--text3)">他 ${done.length-10}件</div>`;
     html+=`</div>`;
   }
 
   content.innerHTML=html;
-
   if(pending.length>0){
     btnArea.innerHTML=`
       <button onclick="closeDeliveryCheck()" class="reset-btn" style="flex:1">閉じる</button>
@@ -663,11 +638,7 @@ async function submitDeliveryCheck(){
   const btnArea=document.getElementById('delivery-btn-area');
   btnArea.innerHTML=`<div style="text-align:center;width:100%;padding:10px;color:var(--text2);font-size:13px">送信中...</div>`;
   try{
-    await fetch(GAS_URL,{
-      method:'POST',mode:'no-cors',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action:'deliveryCheck',staff:selectedStaff})
-    });
+    await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deliveryCheck',staff:selectedStaff})});
   }catch(e){}
   document.getElementById('delivery-content').innerHTML=`
     <div style="text-align:center;padding:40px 20px">
@@ -681,7 +652,6 @@ async function submitDeliveryCheck(){
 }
 
 function closeDeliveryCheck(){document.getElementById('delivery-overlay').classList.remove('open');}
-
 function resetItems(){quantities={};renderBrands();updateCartCount();}
 function resetAll(){
   selectedStaff=null;quantities={};
