@@ -119,21 +119,20 @@
   .confirm-title{font-size:14px;font-weight:500;color:var(--text);margin-bottom:8px}
   .confirm-sub{font-size:12px;color:var(--text2);margin-bottom:18px;line-height:1.6}
 
-  /* 納品確認スタイル */
-  .delivery-order-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:12px;overflow:hidden}
+  /* ── 納品確認スタイル ── */
+  .delivery-staff-card{background:var(--surface2);border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+  .delivery-order-card{background:var(--surface2);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden}
   .delivery-order-header{padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
-  .delivery-order-date{font-size:11px;color:var(--text3);font-family:'DM Mono',monospace}
-  .delivery-order-total{font-size:11px;color:var(--accent);font-family:'DM Mono',monospace;font-weight:500}
-  .delivery-order-items{padding:8px 0}
-  .delivery-item-row{display:flex;justify-content:space-between;align-items:center;padding:6px 14px;font-size:13px}
+  .delivery-item-row{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;font-size:13px;border-bottom:1px solid var(--border)}
+  .delivery-item-row:last-child{border-bottom:none}
   .delivery-item-name{color:var(--text);flex:1}
-  .delivery-item-qty{font-family:'DM Mono',monospace;color:var(--accent);font-weight:500;font-size:13px;white-space:nowrap;margin-left:8px}
-  .no-history{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
-  .delivery-summary-bar{background:rgba(200,169,110,.08);border:1px solid rgba(200,169,110,.2);border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
-  .history-tabs{display:flex;margin-bottom:14px;border:1px solid var(--border);border-radius:8px;overflow:hidden}
-  .history-tab{flex:1;background:var(--surface);border:none;color:var(--text2);font-size:12px;padding:9px 4px;cursor:pointer;transition:all .15s;border-right:1px solid var(--border);text-align:center;font-family:'Noto Sans JP',sans-serif}
-  .history-tab:last-child{border-right:none}
-  .history-tab.active{background:var(--surface2);color:var(--accent);font-weight:500}
+  .delivery-item-qty{font-family:'DM Mono',monospace;color:var(--accent);font-weight:500;margin:0 12px;white-space:nowrap}
+  .status-badge{font-size:11px;padding:3px 8px;border-radius:10px;font-weight:500;white-space:nowrap}
+  .status-pending{background:rgba(200,169,110,.15);color:var(--accent)}
+  .status-done{background:rgba(90,170,122,.15);color:var(--success)}
+  .delivery-summary-bar{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:rgba(200,169,110,.08);border:1px solid rgba(200,169,110,.2);border-radius:8px;margin-bottom:14px}
+  .no-orders{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
+  .loading-spinner{text-align:center;padding:30px;color:var(--text2);font-size:13px}
 </style>
 </head>
 <body>
@@ -252,6 +251,7 @@
 
 <script>
 const STAFF=['AKIRA','RYUTA','KURA','RYUKI','TAKEYAN','YUKA','REN'];
+const GAS_URL='https://script.google.com/macros/s/AKfycbxeQxj0uRaGcNnvtbxZcTAOMmGcyBy7CTiDmDWT7KUCYITKVKzlXgHDFdqPiwbuXpL3fA/exec';
 
 const DEFAULT_BRANDS={
   'イルミナ':{maker:'lily',items:['６ヌード','８ヌード','８ビーチ','６オーシャン','１２オーシャン','６サファリ','８サファリ','４ナイトスカイ','６ナイトスカイ','６トワイライト','６ブロッサム','１２オーキッド','イルミナOX6%','イルミナOX3%','ルミナススプレー','６アンバー']},
@@ -287,29 +287,10 @@ const DEFAULT_BRANDS={
 
 let BRANDS={};
 let selectedStaff=null,quantities={},currentMaker='all',searchQuery='',editMode=false;
-let deliveryTab='summary';
 
 const STORE_KEY='tag_brands_v2';
-const HISTORY_KEY='tag_order_history_v1';
-
-// ── 発注履歴の保存・取得 ──
-function saveOrderToHistory(staff,items,total){
-  let history=[];
-  try{const d=localStorage.getItem(HISTORY_KEY);if(d)history=JSON.parse(d);}catch(e){}
-  history.unshift({id:Date.now(),staff,timestamp:new Date().toISOString(),total,items});
-  try{localStorage.setItem(HISTORY_KEY,JSON.stringify(history.slice(0,300)));}catch(e){}
-}
-
-function getOrderHistory(staff){
-  try{
-    const d=localStorage.getItem(HISTORY_KEY);
-    if(!d)return [];
-    return JSON.parse(d).filter(o=>o.staff===staff);
-  }catch(e){return [];}
-}
 
 function saveStorage(){try{localStorage.setItem(STORE_KEY,JSON.stringify(BRANDS));}catch(e){}}
-
 function loadStorage(){
   try{const d=localStorage.getItem(STORE_KEY);if(d){BRANDS=JSON.parse(d);return;}}catch(e){}
   BRANDS={};
@@ -321,8 +302,9 @@ function sk(s){
   catch(e){return s.replace(/[^a-zA-Z0-9]/g,'_');}
 }
 
-function formatDate(iso){
-  const d=new Date(iso);
+function formatDate(str){
+  const d=new Date(str);
+  if(isNaN(d))return str;
   return `${d.getMonth()+1}/${d.getDate()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 }
 
@@ -434,7 +416,6 @@ function confirmDeleteByEl(btn){
   const row=btn.closest('.item-row');
   confirmDeleteItem(decodeURIComponent(row.dataset.brand),decodeURIComponent(row.dataset.item));
 }
-
 function changeQty(brand,item,delta){
   if(!selectedStaff){document.getElementById('staff-required').style.display='block';document.getElementById('staff-grid').scrollIntoView({behavior:'smooth'});return;}
   const key=brand+':'+item;
@@ -444,7 +425,6 @@ function changeQty(brand,item,delta){
   if(el){el.textContent=nv;el.className='qty-display'+(nv>0?' has-value':'');}
   updateBrandCount(brand);updateCartCount();
 }
-
 function updateBrandCount(brand){
   const d=BRANDS[brand];if(!d)return;
   const t=d.items.reduce((s,i)=>s+(quantities[brand+':'+i]||0),0);
@@ -454,13 +434,11 @@ function updateBrandCount(brand){
     if(cnt){cnt.className='brand-count'+(t>0?' has-items':'');cnt.textContent=t>0?'✓ '+t+'個':d.items.length+'種';}
   });
 }
-
 function updateCartCount(){
   const t=Object.values(quantities).reduce((s,v)=>s+v,0);
   document.getElementById('cart-count').textContent=t;
   document.getElementById('submit-btn').disabled=t===0||!selectedStaff;
 }
-
 function inlineAdd(brand){
   const inp=document.getElementById('ii_'+sk(brand));if(!inp)return;
   const name=inp.value.trim();if(!name)return;
@@ -471,7 +449,6 @@ function inlineAdd(brand){
   }
   d.items.push(name);saveStorage();inp.value='';renderBrands();
 }
-
 function openAddModal(){
   document.getElementById('add-brand-name').value='';
   document.getElementById('add-brand-err').style.display='none';
@@ -479,7 +456,6 @@ function openAddModal(){
   setTimeout(()=>document.getElementById('add-brand-name').focus(),300);
 }
 function closeAddModal(){document.getElementById('add-overlay').classList.remove('open');}
-
 function confirmAddBrand(){
   const maker=document.getElementById('add-maker').value;
   const name=document.getElementById('add-brand-name').value.trim();
@@ -492,7 +468,6 @@ function confirmAddBrand(){
   renderBrands();
   setTimeout(()=>{document.querySelectorAll('.brand-name').forEach(el=>{if(el.textContent===name)el.closest('.brand-section')?.scrollIntoView({behavior:'smooth',block:'center'});});},150);
 }
-
 let pendingDelete=null;
 function confirmDeleteItem(brand,item){
   pendingDelete={type:'item',brand,item};
@@ -544,8 +519,6 @@ function openCart(){
 }
 function closeCart(){document.getElementById('cart-overlay').classList.remove('open');}
 
-const GAS_URL='https://script.google.com/macros/s/AKfycbxeQxj0uRaGcNnvtbxZcTAOMmGcyBy7CTiDmDWT7KUCYITKVKzlXgHDFdqPiwbuXpL3fA/exec';
-
 async function submitOrder(){
   const total=Object.values(quantities).reduce((s,v)=>s+v,0);
   closeCart();
@@ -553,22 +526,11 @@ async function submitOrder(){
   document.getElementById('bottom-bar').style.display='none';
   document.getElementById('success-screen').classList.add('show');
   document.getElementById('success-detail').innerHTML=`<span style="color:var(--text2);font-size:13px">送信中...</span>`;
-
-  // 履歴用にブランド情報も含めて整形
-  const itemsForHistory=[];
-  const itemsForGAS=[];
-  Object.entries(quantities).forEach(([key,qty])=>{
-    const idx=key.indexOf(':');
-    const brand=key.slice(0,idx);const name=key.slice(idx+1);
-    itemsForHistory.push({brand,name,qty});
-    itemsForGAS.push({name,qty});
+  const items=Object.entries(quantities).map(([key,qty])=>{
+    const idx=key.indexOf(':');return{name:key.slice(idx+1),qty};
   });
-
-  // ブラウザに発注履歴を保存
-  saveOrderToHistory(selectedStaff,itemsForHistory,total);
-
   try{
-    await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({staff:selectedStaff,items:itemsForGAS,timestamp:new Date().toISOString()})});
+    await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({staff:selectedStaff,items,timestamp:new Date().toISOString()})});
     document.getElementById('success-detail').innerHTML=`<strong style="color:var(--accent)">${selectedStaff}</strong> さんの注文<br>計 <strong style="color:var(--accent)">${total}個</strong> を管理者に送信しました`;
   }catch(err){
     document.getElementById('success-detail').innerHTML=`<strong style="color:var(--accent)">${selectedStaff}</strong> さんの注文<br>計 <strong style="color:var(--accent)">${total}個</strong> を管理者に送信しました<br><span style="font-size:11px;color:var(--text3)">※オフライン時は後で再送されます</span>`;
@@ -576,123 +538,144 @@ async function submitOrder(){
 }
 
 // ── 納品確認 ──
-function openDeliveryCheck(){
+async function openDeliveryCheck(){
   if(!selectedStaff){
     document.getElementById('staff-required').style.display='block';
     document.getElementById('staff-grid').scrollIntoView({behavior:'smooth'});return;
   }
-  deliveryTab='summary';
-  renderDeliveryContent();
+  document.getElementById('delivery-content').innerHTML=`
+    <div class="loading-spinner">
+      <div style="font-size:28px;margin-bottom:10px">⏳</div>
+      <div>スプレッドシートから読み込み中...</div>
+    </div>`;
+  document.getElementById('delivery-btn-area').innerHTML='';
   document.getElementById('delivery-overlay').classList.add('open');
+
+  try{
+    const res=await fetch(`${GAS_URL}?action=getMyOrders&staff=${encodeURIComponent(selectedStaff)}`);
+    const json=await res.json();
+    if(json.status==='ok'){
+      renderDeliveryOrders(json.orders);
+    }else{
+      showDeliveryError(json.message);
+    }
+  }catch(e){
+    showDeliveryError('通信エラーが発生しました');
+  }
 }
 
-function renderDeliveryContent(){
+function renderDeliveryOrders(orders){
   const content=document.getElementById('delivery-content');
   const btnArea=document.getElementById('delivery-btn-area');
-  const history=getOrderHistory(selectedStaff);
 
-  let html=`<div style="background:var(--surface2);border-radius:8px;padding:12px 14px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center">
-    <div>
-      <div style="font-size:10px;color:var(--text3);letter-spacing:.1em;margin-bottom:3px">スタッフ</div>
-      <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--accent)">${selectedStaff}</div>
-    </div>
-    <div style="text-align:right">
-      <div style="font-size:10px;color:var(--text3);letter-spacing:.1em;margin-bottom:3px">発注回数</div>
-      <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--text)">${history.length}回</div>
-    </div>
-  </div>`;
+  if(!orders||orders.length===0){
+    content.innerHTML=`
+      <div class="delivery-staff-card">
+        <div>
+          <div style="font-size:10px;color:var(--text3);margin-bottom:3px">スタッフ</div>
+          <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--accent)">${selectedStaff}</div>
+        </div>
+      </div>
+      <div class="no-orders">
+        <div style="font-size:36px;margin-bottom:12px">📭</div>
+        <div>発注履歴がありません</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:6px">注文を送信すると履歴が表示されます</div>
+      </div>`;
+    btnArea.innerHTML=`<button onclick="closeDeliveryCheck()" class="reset-btn" style="flex:1">閉じる</button>`;
+    return;
+  }
 
-  html+=`<div class="history-tabs">
-    <button class="history-tab${deliveryTab==='summary'?' active':''}" onclick="switchDeliveryTab('summary')">📊 商材まとめ</button>
-    <button class="history-tab${deliveryTab==='history'?' active':''}" onclick="switchDeliveryTab('history')">📋 発注履歴</button>
-  </div>`;
+  // 未受取・受取済に分ける
+  const pending=orders.filter(o=>o.status!=='確認済');
+  const done=orders.filter(o=>o.status==='確認済');
+  const pendingTotal=pending.reduce((s,o)=>s+Number(o.qty),0);
 
-  if(history.length===0){
-    html+=`<div class="no-history">
-      <div style="font-size:36px;margin-bottom:12px">📭</div>
-      <div>発注履歴がありません</div>
-      <div style="font-size:12px;color:var(--text3);margin-top:6px">注文を送信すると履歴が表示されます</div>
-    </div>`;
-  } else if(deliveryTab==='summary'){
-    // 全履歴を商材ごとに集計
-    const totals={};
-    history.forEach(order=>{
-      order.items.forEach(({brand,name,qty})=>{
-        const key=brand+'::'+name;
-        if(!totals[key])totals[key]={brand,name,qty:0};
-        totals[key].qty+=qty;
-      });
-    });
-    const byBrand={};
-    Object.values(totals).forEach(({brand,name,qty})=>{
-      if(!byBrand[brand])byBrand[brand]=[];
-      byBrand[brand].push({name,qty});
-    });
-    const grandTotal=Object.values(totals).reduce((s,{qty})=>s+qty,0);
-
-    html+=`<div class="delivery-summary-bar">
-      <span style="font-size:12px;color:var(--text2)">累計発注数</span>
-      <span style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--accent)">${grandTotal}個</span>
+  let html=`
+    <div class="delivery-staff-card">
+      <div>
+        <div style="font-size:10px;color:var(--text3);margin-bottom:3px">スタッフ</div>
+        <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--accent)">${selectedStaff}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:10px;color:var(--text3);margin-bottom:3px">未受取</div>
+        <div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:${pending.length>0?'var(--accent)':'var(--text3)'}">${pending.length}件</div>
+      </div>
     </div>`;
 
-    Object.entries(byBrand).forEach(([brand,items])=>{
-      const d=BRANDS[brand];
-      const mc=d?.maker==='lily'?'maker-lily':'maker-mirabis';
-      const ml=d?.maker==='lily'?'リリー':'ミラビス';
-      html+=`<div class="delivery-order-card">
-        <div class="delivery-order-header">
-          <span style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--accent)">${brand}</span>
-          <span class="maker-pill ${mc}">${ml}</span>
-        </div>
-        <div class="delivery-order-items">`;
-      items.sort((a,b)=>b.qty-a.qty).forEach(({name,qty})=>{
-        html+=`<div class="delivery-item-row"><span class="delivery-item-name">${name}</span><span class="delivery-item-qty">${qty}個</span></div>`;
-      });
-      html+=`</div></div>`;
+  if(pending.length>0){
+    html+=`
+      <div class="delivery-summary-bar">
+        <span style="font-size:12px;color:var(--text2)">🟡 未受取の合計</span>
+        <span style="font-family:'DM Mono',monospace;font-size:14px;font-weight:500;color:var(--accent)">${pendingTotal}個 / ${pending.length}件</span>
+      </div>
+      <div class="delivery-order-card">`;
+    pending.forEach(o=>{
+      html+=`
+        <div class="delivery-item-row">
+          <span class="delivery-item-name">${o.item}</span>
+          <span class="delivery-item-qty">${o.qty}個</span>
+          <span class="status-badge status-pending">🟡 未受取</span>
+        </div>`;
     });
+    html+=`</div>`;
+  }
 
-  } else {
-    // 発注履歴タブ：注文ごとに表示（最新20件）
-    history.slice(0,20).forEach(order=>{
-      const byBrand={};
-      order.items.forEach(({brand,name,qty})=>{
-        if(!byBrand[brand])byBrand[brand]=[];
-        byBrand[brand].push({name,qty});
-      });
-      html+=`<div class="delivery-order-card">
-        <div class="delivery-order-header">
-          <span class="delivery-order-date">🕐 ${formatDate(order.timestamp)}</span>
-          <span class="delivery-order-total">計 ${order.total}個</span>
-        </div>
-        <div class="delivery-order-items">`;
-      Object.entries(byBrand).forEach(([brand,items])=>{
-        html+=`<div style="padding:4px 14px 2px;font-size:10px;color:var(--text3);letter-spacing:.08em">${brand}</div>`;
-        items.forEach(({name,qty})=>{
-          html+=`<div class="delivery-item-row"><span class="delivery-item-name">${name}</span><span class="delivery-item-qty">${qty}個</span></div>`;
-        });
-      });
-      html+=`</div></div>`;
+  if(done.length>0){
+    html+=`
+      <div style="font-size:11px;color:var(--text3);margin:14px 0 8px;letter-spacing:.08em">✅ 受取済（${done.length}件）</div>
+      <div class="delivery-order-card">`;
+    done.slice(0,10).forEach(o=>{
+      html+=`
+        <div class="delivery-item-row" style="opacity:.6">
+          <span class="delivery-item-name">${o.item}</span>
+          <span class="delivery-item-qty">${o.qty}個</span>
+          <span class="status-badge status-done">✅ 受取済</span>
+        </div>`;
     });
+    if(done.length>10){
+      html+=`<div style="text-align:center;padding:8px;font-size:12px;color:var(--text3)">他 ${done.length-10}件</div>`;
+    }
+    html+=`</div>`;
   }
 
   content.innerHTML=html;
-  btnArea.innerHTML=`
-    <button onclick="closeDeliveryCheck()" class="reset-btn" style="flex:1">閉じる</button>
-    <button onclick="submitDeliveryCheck()" class="submit-btn" style="flex:2;background:var(--success)">✅ 受け取りました</button>
-  `;
+
+  if(pending.length>0){
+    btnArea.innerHTML=`
+      <button onclick="closeDeliveryCheck()" class="reset-btn" style="flex:1">閉じる</button>
+      <button onclick="submitDeliveryCheck()" class="submit-btn" style="flex:2;background:var(--success)">✅ 受け取りました</button>`;
+  }else{
+    btnArea.innerHTML=`<button onclick="closeDeliveryCheck()" class="submit-btn" style="flex:1">閉じる</button>`;
+  }
 }
 
-function switchDeliveryTab(tab){deliveryTab=tab;renderDeliveryContent();}
+function showDeliveryError(msg){
+  document.getElementById('delivery-content').innerHTML=`
+    <div style="text-align:center;padding:30px 20px;color:var(--text2);font-size:13px">
+      <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+      <div>${msg}</div>
+      <div style="font-size:12px;color:var(--text3);margin-top:8px">ネットワーク接続を確認してください</div>
+    </div>`;
+  document.getElementById('delivery-btn-area').innerHTML=`<button onclick="closeDeliveryCheck()" class="reset-btn" style="flex:1">閉じる</button>`;
+}
 
 async function submitDeliveryCheck(){
   const btnArea=document.getElementById('delivery-btn-area');
-  btnArea.innerHTML='<div style="text-align:center;width:100%;padding:10px;color:var(--text2);font-size:13px">送信中...</div>';
-  try{await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'deliveryCheck',staff:selectedStaff})});}catch(e){}
+  btnArea.innerHTML=`<div style="text-align:center;width:100%;padding:10px;color:var(--text2);font-size:13px">送信中...</div>`;
+  try{
+    await fetch(GAS_URL,{
+      method:'POST',mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({action:'deliveryCheck',staff:selectedStaff})
+    });
+  }catch(e){}
   document.getElementById('delivery-content').innerHTML=`
-    <div style="text-align:center;padding:30px 20px">
-      <div style="font-size:40px;margin-bottom:12px">✅</div>
-      <div style="font-size:16px;font-weight:700;color:var(--success);margin-bottom:8px">確認しました！</div>
-      <div style="font-size:13px;color:var(--text2)"><strong style="color:var(--accent)">${selectedStaff}</strong> さんの納品確認を送信しました</div>
+    <div style="text-align:center;padding:40px 20px">
+      <div style="font-size:48px;margin-bottom:14px">✅</div>
+      <div style="font-size:17px;font-weight:700;color:var(--success);margin-bottom:8px">受け取り完了！</div>
+      <div style="font-size:13px;color:var(--text2)">
+        <strong style="color:var(--accent)">${selectedStaff}</strong> さんの<br>未受取商材をすべて確認済みにしました
+      </div>
     </div>`;
   btnArea.innerHTML=`<button onclick="closeDeliveryCheck()" class="submit-btn" style="flex:1">閉じる</button>`;
 }
@@ -700,7 +683,6 @@ async function submitDeliveryCheck(){
 function closeDeliveryCheck(){document.getElementById('delivery-overlay').classList.remove('open');}
 
 function resetItems(){quantities={};renderBrands();updateCartCount();}
-
 function resetAll(){
   selectedStaff=null;quantities={};
   document.querySelectorAll('.staff-btn').forEach(b=>b.classList.remove('active'));
