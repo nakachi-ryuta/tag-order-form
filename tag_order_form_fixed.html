@@ -241,7 +241,7 @@ const DEFAULT_BRANDS={
   'パイモア':{maker:'lily',items:['フェードブラック','ショコラベージュ']},
   'ミルボン':{maker:'lily',items:['ネオリシオH１']},
   'シュワルツコフ':{maker:'lily',items:['FPボンドミルク']},
-  '００３':{maker:'lily',items:['3C（003）','6C（003）','8C（003）','12C（003）','6P（003）','12P（003）','6A（003）','12A（003）','6W（003）','8W（003）','LT（003）','BK（003）','4NB（003）','8NB（003）','TA（003）','TV（003）','ac3%OX','ヴィーガンブリーチ','CL（003）','3NB（003）','6PB（003）','6M（003）','TB（003）','HUE 6%OX','HUEグロス 6/N','HUEグロス 6/T','HUEグロス 6/C','HUEグロス CL','HUEグロス OX2T','HUE 12/NF','HUE 6/NF','HUE 12/TS','HUE 8/0N','HUE 9/0B','ｲﾝﾃｨｳﾑｽﾀｰﾃｨﾝｸﾞｾｯﾄ','ｲﾝﾃｨｳﾑ0','ｲﾝﾃｨｳﾑ1s','ｲﾝﾃｨｳﾑ1m','ｲﾝﾃｨｳﾑ2','ｲﾝﾃｨｳﾑ3','ｲﾝﾃｨｳﾑ4','ｲﾝﾃｨｳﾑhome','TG（003）','mirai 8NaB','mirai 10NaB','mirai 12NaB','mirai 8ShB','mirai 10ShB','mirai 12ShB','mirai 14/CL','mirai 0/CL','mirai scalp','mirai texture','mirai FR','mirai 8BeB','mirai 6ShB','カールマインセカンドBR800ml','mirai MB','mirai RV','mirai IV','6Co']},
+  '００３':{maker:'lily',items:['3C（003）','6C（003）','8C（003）','12C（003）','6P（003）','12P（003）','6A（003）','12A（003）','6W（003）','8W（003）','LT（003）','BK（003）','4NB（003）','8NB（003）','TA（003）','TV（003）','ac3%OX','ヴィーガンブリーチ','CL（003）','3NB（003）','6PB（003）','6M（003）','TB（003）','HUE 6%OX','HUEグロス 6/N','HUEグロス 6/T','HUEグロス 6/C','HUEグロス CL','HUEグロス OX2T','HUE 12/NF','HUE 6/NF','HUE 12/TS','HUE 8/0N','HUE 9/0B','ｲﾝﾃｨｳﾑｽﾀｰﾃｨﾝｸﾞｾｯﾄ','ｲﾝﾃｨｳﾑ0','ｲﾝﾃｨｳﾑ1s','ｲﾝﾃｨｳﾑ1m','ｲﾝﾃｨｳﾑ2','ｲﾝﾃｨｳﾑ3','ｲﾝﾃｨｳﾑ4','ｲﾝﾃｨｳﾑhome','TG（003）','mirai 8NaB','mirai 10NaB','mirai 12NaB','mirai 8ShB','mirai 10ShB','mirai 12ShB','mirai 14/CL','mirai 0/CL','mirai scalp','mirai texture','mirai FR','mirai 8BeB','mirai 6ShB','カールマインセカンドBR800ml','mirai MB','mirai RV','mirai IV','6Co（003）']},
   'ENOG':{maker:'lily',items:['オフブラック','ネオンピンク','ブルー','パープル','ブラック','シアン','ﾎﾘｯｶｰ ｲｴﾛｰ','9グリーン']},
   'ミューズ':{maker:'lily',items:['Brown','White','RED','Yellow','Green','Blue','Violet','Pink','Beige','orange']},
   'プライア':{maker:'lily',items:['TG','CT','カールマイン']},
@@ -263,7 +263,7 @@ const DEFAULT_BRANDS={
 
 let BRANDS={};
 let selectedStaff=null,quantities={},currentMaker='all',searchQuery='',editMode=false;
-const STORE_KEY='tag_brands_v3';
+const STORE_KEY='tag_brands_v4';
 
 function saveStorage(){try{localStorage.setItem(STORE_KEY,JSON.stringify(BRANDS));}catch(e){}}
 function loadStorage(){
