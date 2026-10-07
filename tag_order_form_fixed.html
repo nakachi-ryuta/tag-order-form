@@ -260,11 +260,11 @@ const DEFAULT_BRANDS={
   'マデナ':{maker:'mirabis',items:['アルカリ 100g','ピール 200g','コネクト 1000ml','R3 500g','メルト 120g','ジャックエッジ 2500ml','オーバーエッジ 1000ml','パラホゴ 200g']},
   'X treatment':{maker:'mirabis',items:['シャンプー1L','ﾄﾘｰﾄﾒﾝﾄ 1kg','ﾄﾘｰﾄﾒﾝﾄ 500']},
   'ピアセラボ':{maker:'mirabis',items:['エアンス　ヒートケアポテンツァ　400g','エアンス　ヒートケアポテンツァメンテナンス　400g','エアンス　プラントプレックスミルク　500g']},
-};
+　'EIMI':{maker:'lily',items:['EIMIブーストバウンスムース 300ml']},　};
 
 let BRANDS={};
 let selectedStaff=null,quantities={},currentMaker='all',searchQuery='',editMode=false;
-const STORE_KEY='tag_brands_v6';
+const STORE_KEY='tag_brands_v7';
 
 function saveStorage(){try{localStorage.setItem(STORE_KEY,JSON.stringify(BRANDS));}catch(e){}}
 function loadStorage(){
