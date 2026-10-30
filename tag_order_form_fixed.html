@@ -261,11 +261,12 @@ const DEFAULT_BRANDS={
   'X treatment':{maker:'mirabis',items:['シャンプー1L','ﾄﾘｰﾄﾒﾝﾄ 1kg','ﾄﾘｰﾄﾒﾝﾄ 500']},
   'ピアセラボ':{maker:'mirabis',items:['エアンス　ヒートケアポテンツァ　400g','エアンス　ヒートケアポテンツァメンテナンス　400g','エアンス　プラントプレックスミルク　500g']},
 　'EIMI':{maker:'lily',items:['EIMIブーストバウンスムース 300ml']},　};
-
+　'フィヨーレ':{maker:'lily',items:['11シルバー']},
+  
 let BRANDS={};
 let selectedStaff=null,quantities={},currentMaker='all',searchQuery='',editMode=false;
-const STORE_KEY='tag_brands_v7';
-
+const STORE_KEY='tag_brands_v8';
+s
 function saveStorage(){try{localStorage.setItem(STORE_KEY,JSON.stringify(BRANDS));}catch(e){}}
 function loadStorage(){
   try{const d=localStorage.getItem(STORE_KEY);if(d){BRANDS=JSON.parse(d);return;}}catch(e){}
